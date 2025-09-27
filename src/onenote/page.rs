@@ -62,16 +62,23 @@ impl Page {
     /// The page's title text.
     ///
     /// This is calculated using a heuristic similar to the one OneNote uses.
-    pub fn title_text(&self) -> Option<&str> {
+    pub fn title_text(&self) -> Option<String> {
         self.title
             .as_ref()
             .and_then(|title| title.contents.first())
             .and_then(Self::outline_text)
+            .and_then(|t| Some(Self::remove_hyperlink(t.to_owned())))
             .or_else(|| {
                 self.contents
                     .iter()
                     .filter_map(|page_content| page_content.outline())
-                    .filter_map(Self::outline_text)
+                    .filter_map(|t| {
+                        let v = Self::outline_text(t);
+                        if v.is_none() {
+                            return None;
+                        }
+                        return Some(Self::remove_hyperlink(v.unwrap().to_owned()));
+                    })
                     .next()
             })
     }
@@ -84,6 +91,33 @@ impl Page {
             .and_then(|outline_element| outline_element.contents.first())
             .and_then(|content| content.rich_text())
             .and_then(|text| Some(&*text.text).filter(|s| !s.is_empty()))
+    }
+
+    fn remove_hyperlink(title: String) -> String {
+        const HYPERLINK_MARKER: &str = "\u{fddf}HYPERLINK \"";
+
+        let mut title_copy = title.clone();
+
+        loop {
+            // Find the first hyperlink mark
+            if let Some(marker_start) = title_copy.find(HYPERLINK_MARKER) {
+                let hyperlink_part = &title_copy[marker_start + HYPERLINK_MARKER.len()..];
+
+                // Find the closing double quote of the hyperlink
+                if let Some(quote_end) = hyperlink_part.find('"') {
+                    let before_hyperlink = &title_copy[..marker_start];
+                    let after_hyperlink = &hyperlink_part[quote_end + 1..];
+                    title_copy = format!("{}{}", before_hyperlink, after_hyperlink);
+                } else {
+                    // Sometimes links are broken, in these cases we only consider what is before the mark
+                    title_copy = title[..marker_start].to_string();
+                }
+            } else {
+                break;
+            }
+        }
+
+        title_copy
     }
 }
 
@@ -155,6 +189,9 @@ pub(crate) fn parse_page(page_space: &ObjectSpace) -> Result<Page> {
         .title
         .map(|id| parse_title(id, page_space))
         .transpose()?;
+
+    // TODO: title = extract_text_from_title(&title);
+
     let level = metadata.page_level;
 
     let contents = data
@@ -222,3 +259,21 @@ fn parse_metadata(space: &ObjectSpace) -> Result<page_metadata::Data> {
 
     page_metadata::parse(metadata_object)
 }
+
+// fn extract_text_from_title(title: &Option<Title>) -> String {
+//     let mut result = String::new();
+//     if let Some(title_content) = title {
+//         for outline in &title_content.contents {
+//             for item in &outline.items {
+//                 if let Some(element) = item.element() {
+//                     for content in &element.contents {
+//                         if let Some(rich_text) = content.rich_text() {
+//                             result.push_str(&rich_text.text);
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     result
+// }

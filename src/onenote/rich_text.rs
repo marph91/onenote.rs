@@ -4,10 +4,14 @@ use crate::one::property::charset::Charset;
 use crate::one::property::color_ref::ColorRef;
 use crate::one::property::layout_alignment::LayoutAlignment;
 use crate::one::property::paragraph_alignment::ParagraphAlignment;
-use crate::one::property_set::{embedded_ink_container, paragraph_style_object, rich_text_node};
+use crate::one::property_set::{
+    embedded_ink_container, paragraph_style_object, rich_text_node,
+};
 use crate::onenote::ink::{parse_ink_data, Ink, InkBoundingBox};
 use crate::onenote::note_tag::{parse_note_tags, NoteTag};
+use crate::onestore::object::Object;
 use crate::onestore::object_space::ObjectSpace;
+use log::warn;
 use itertools::Itertools;
 
 /// A rich text paragraph.
@@ -369,10 +373,11 @@ pub(crate) fn parse_rich_text(content_id: ExGuid, space: &ObjectSpace) -> Result
     let data = rich_text_node::parse(object)?;
 
     // Parse the base paragraph style
-    let paragraph_style_object = space
-        .get_object(data.paragraph_style)
-        .ok_or_else(|| ErrorKind::MalformedOneNoteData("paragraph styling is missing".into()))?;
-    let paragraph_style_data = paragraph_style_object::parse(paragraph_style_object)?;
+    let paragraph_style_object = space.get_object_or_fallback(data.paragraph_style, || {
+        warn!("paragraph styling is missing");
+        Object::fallback()
+    });
+    let paragraph_style_data = paragraph_style_object::parse(&paragraph_style_object)?;
     let paragraph_style = parse_style(paragraph_style_data);
 
     // Parse the styles text runs (part 1)

@@ -8,6 +8,7 @@ use crate::one::property::{simple, PropertyType};
 use crate::one::property_set::PropertySetId;
 use crate::onestore::object::Object;
 use crate::shared::guid::Guid;
+use log::warn;
 
 /// A page series.
 ///
@@ -31,7 +32,10 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
     }
 
     let entity_guid = simple::parse_guid(PropertyType::NotebookManagementEntityGuid, object)?
-        .ok_or_else(|| ErrorKind::MalformedOneNoteFileData("page series has no guid".into()))?;
+        .unwrap_or_else(|| {
+            warn!("page series has no guid");
+            return Guid::nil();
+        });
     let page_spaces =
         ObjectSpaceReference::parse_vec(PropertyType::ChildGraphSpaceElementNodes, object)?
             .unwrap_or_default();

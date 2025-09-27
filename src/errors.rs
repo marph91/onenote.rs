@@ -1,7 +1,5 @@
 //! OneNote parsing error handling.
 
-#[cfg(feature = "backtrace")]
-use std::backtrace::Backtrace;
 use std::borrow::Cow;
 use std::{io, string};
 use thiserror::Error;
@@ -19,21 +17,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[error("{kind}")]
 pub struct Error {
     kind: ErrorKind,
-
-    #[cfg(feature = "backtrace")]
-    backtrace: Backtrace,
 }
 
 impl From<ErrorKind> for Error {
-    #[cfg(feature = "backtrace")]
-    fn from(kind: ErrorKind) -> Self {
-        Error {
-            kind,
-            backtrace: Backtrace::capture(),
-        }
-    }
-
-    #[cfg(not(feature = "backtrace"))]
     fn from(kind: ErrorKind) -> Self {
         Error { kind }
     }
@@ -94,6 +80,10 @@ pub enum ErrorKind {
     /// Malformed data was encountered when parsing the OneNote file contents.
     #[error("Malformed OneNote file data: {0}")]
     MalformedOneNoteFileData(Cow<'static, str>),
+
+    /// Malformed data was encountered when parsing the OneNote file contents.
+    #[error("Malformed OneNote incorrect type: {0}")]
+    MalformedOneNoteIncorrectType(String),
 
     /// Malformed data was encountered when parsing the OneStore data.
     #[error("Malformed OneStore data: {0}")]

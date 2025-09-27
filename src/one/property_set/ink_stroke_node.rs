@@ -5,6 +5,7 @@ use crate::one::property::{simple, PropertyType};
 use crate::one::property_set::PropertySetId;
 use crate::onestore::object::Object;
 use crate::shared::multi_byte;
+use log::warn;
 
 /// An ink stroke.
 #[allow(dead_code)]
@@ -32,21 +33,22 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
     let path = simple::parse_vec(PropertyType::InkPath, object)?
         .map(|data| multi_byte::decode_signed(&data))
         .ok_or_else(|| {
-            ErrorKind::MalformedOneNoteFileData("ink stroke node has no ink path".into())
-        })?;
+            warn!("ink stroke node has no ink path");
+            Vec::<i64>::new()
+            // ErrorKind::MalformedOneNoteFileData("ink stroke node has no ink path".into())
+        })
+        .unwrap();
     let bias = simple::parse_u8(PropertyType::InkBias, object)?
         .map(|bias| match bias {
-            0 => Ok(InkBias::Handwriting),
-            1 => Ok(InkBias::Drawing),
-            2 => Ok(InkBias::Both),
-            i => Err(ErrorKind::MalformedOneNoteFileData(
-                format!("invalid ink bias value: {}", i).into(),
-            )),
+            0 => InkBias::Handwriting,
+            1 => InkBias::Drawing,
+            2 => InkBias::Both,
+            _i => InkBias::Both,
         })
-        .transpose()?
-        .ok_or_else(|| {
-            ErrorKind::MalformedOneNoteFileData("ink stroke node has no ink bias".into())
-        })?;
+        .unwrap_or_else(|| {
+            warn!("No InkBias was set. Using default value 'Both'");
+            return InkBias::Both;
+        });
     let language_code = simple::parse_u32(PropertyType::LanguageId, object)?;
     let properties = ObjectReference::parse(PropertyType::InkStrokeProperties, object)?
         .ok_or_else(|| {

@@ -182,8 +182,9 @@ pub(crate) enum PropertyType {
     InkPath = 0x1C00340B,
     InkStrokeProperties = 0x20003409,
     InkStrokes = 0x24003416,
-    InkAntialised = 0x8000340E,
-    InkFitToCurve = 0x80003410,
+    // TODO: Fix values not being accepted as valid enum values
+    // InkAntialised = 0x8000340E,
+    // InkFitToCurve = 0x80003410,
     InkIgnorePressure = 0x08003411,
     InkPenTip = 0x0C003412,
     InkRasterOperation = 0x0C003413,

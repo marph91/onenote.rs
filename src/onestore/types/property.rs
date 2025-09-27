@@ -1,6 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use crate::onestore::types::prop_set::PropertySet;
 use crate::Reader;
+use std::convert::TryFrom;
 use std::fmt;
 
 /// A property value.
@@ -23,6 +24,20 @@ pub(crate) enum PropertyValue {
     PropertySet(PropertySet),
 }
 
+impl TryFrom<&PropertyValue> for u8 {
+    type Error = &'static str;
+
+    fn try_from(value: &PropertyValue) -> std::result::Result<u8, Self::Error> {
+        match value.to_u8() {
+            Some(val) => Ok(val),
+            None => {
+                let val = value.to_u32().ok_or("Conversion error")?;
+                Ok(u8::try_from(val).map_err(|_| "Conversion error")?)
+            }
+        }
+    }
+}
+
 impl PropertyValue {
     pub(crate) fn to_bool(&self) -> Option<bool> {
         if let Self::Bool(v) = self {
@@ -38,6 +53,10 @@ impl PropertyValue {
         } else {
             None
         }
+    }
+
+    pub(crate) fn try_to_u8(&self) -> Option<u8> {
+        u8::try_from(self).ok()
     }
 
     pub(crate) fn to_u16(&self) -> Option<u16> {
