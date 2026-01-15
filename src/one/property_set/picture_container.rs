@@ -1,5 +1,5 @@
 use crate::errors::{ErrorKind, Result};
-use crate::one::property::{simple, PropertyType};
+use crate::one::property::{PropertyType, simple};
 use crate::one::property_set::PropertySetId;
 use crate::onestore::object::Object;
 
@@ -9,6 +9,7 @@ use crate::onestore::object::Object;
 ///
 /// [\[MS-ONE\] 2.2.36]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/28112f88-80f5-49b2-8988-d4a66dcc4d80
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) data: Vec<u8>,
     pub(crate) extension: Option<String>,

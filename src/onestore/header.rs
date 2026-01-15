@@ -12,6 +12,7 @@ use crate::shared::guid::Guid;
 ///
 /// [\[MS-ONESTORE\] 2.7.2]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-onestore/07a5dc4d-0d97-4a4c-ab69-aa7957d7115c
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct StoreHeader {
     file_identity: Guid,
     ancestor_identity: Guid,
@@ -41,7 +42,7 @@ impl StoreHeader {
 
         let file_identity = prop_set
             .get(PropertyType::FileIdentityGuid)
-            .map(|value| StoreHeader::parse_guid(value))
+            .map(StoreHeader::parse_guid)
             .transpose()?
             .ok_or_else(|| {
                 ErrorKind::MalformedOneStoreData("FileIdentityGuid prop missing".into())
@@ -49,7 +50,7 @@ impl StoreHeader {
 
         let ancestor_identity = prop_set
             .get(PropertyType::FileAncestorIdentityGuid)
-            .map(|value| StoreHeader::parse_guid(value))
+            .map(StoreHeader::parse_guid)
             .transpose()?
             .ok_or_else(|| {
                 ErrorKind::MalformedOneStoreData("FileAncestorIdentityGuid prop missing".into())
@@ -57,12 +58,12 @@ impl StoreHeader {
 
         let last_code_version_that_wrote_to_it = prop_set
             .get(PropertyType::FileLastCodeVersionThatWroteToIt)
-            .map(|value| StoreHeader::parse_u32(value))
+            .map(StoreHeader::parse_u32)
             .transpose()?;
 
         let file_name_crc = prop_set
             .get(PropertyType::FileNameCrc)
-            .map(|value| StoreHeader::parse_u32(value))
+            .map(StoreHeader::parse_u32)
             .transpose()?
             .ok_or_else(|| ErrorKind::MalformedOneStoreData("FileNameCRC prop missing".into()))?;
 

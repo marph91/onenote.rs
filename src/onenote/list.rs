@@ -8,7 +8,7 @@ use crate::onestore::object_space::ObjectSpace;
 ///
 /// See [\[MS-ONE\] 2.2.25].
 ///
-/// [\[MS-ONE\]] 2.2.25: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/1a141e7a-4455-4971-bf0b-1621e221984e
+/// [\[MS-ONE\] 2.2.25]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/1a141e7a-4455-4971-bf0b-1621e221984e
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct List {
     pub(crate) list_font: Option<String>,
@@ -89,8 +89,6 @@ pub(crate) fn parse_list(list_id: ExGuid, space: &ObjectSpace) -> Result<List> {
         .get_object(list_id)
         .ok_or_else(|| ErrorKind::MalformedOneNoteData("rich text content is missing".into()))?;
     let data = number_list_node::parse(object)?;
-
-    // TODO: Parse language code
 
     let list = List {
         list_font: data.list_font,

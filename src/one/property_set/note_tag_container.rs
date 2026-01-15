@@ -1,10 +1,10 @@
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::exguid::ExGuid;
+use crate::one::property::PropertyType;
 use crate::one::property::note_tag::ActionItemStatus;
 use crate::one::property::object_reference::ObjectReference;
 use crate::one::property::object_space_reference::ObjectSpaceReference;
 use crate::one::property::time::Time;
-use crate::one::property::PropertyType;
 use crate::onestore::object::Object;
 use crate::onestore::types::compact_id::CompactId;
 use crate::onestore::types::jcid::JcId;
@@ -18,6 +18,7 @@ use crate::onestore::types::property::PropertyId;
 ///
 /// [\[MS-ONE\] 2.2.88]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/a9938236-87f8-41b1-81f3-5f760e1247b8
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) definition: Option<ExGuid>,
     pub(crate) created_at: Time,

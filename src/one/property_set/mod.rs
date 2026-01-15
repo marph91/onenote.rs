@@ -4,6 +4,8 @@
 //!
 //! [\[MS-ONE\] 2.1.13]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/73d98105-f194-4c05-a795-09840a6d24bf
 
+use crate::errors::{ErrorKind, Result};
+use crate::onestore::object::Object;
 use crate::onestore::types::jcid::JcId;
 use enum_primitive_derive::Primitive;
 use num_traits::FromPrimitive;
@@ -16,6 +18,7 @@ pub(crate) mod image_node;
 pub(crate) mod ink_container;
 pub(crate) mod ink_data_node;
 pub(crate) mod ink_stroke_node;
+pub(crate) mod math_inline_object;
 pub(crate) mod note_tag_container;
 pub(crate) mod note_tag_shared_definition_container;
 pub(crate) mod number_list_node;
@@ -35,6 +38,7 @@ pub(crate) mod stroke_properties_node;
 pub(crate) mod table_cell_node;
 pub(crate) mod table_node;
 pub(crate) mod table_row_node;
+pub(crate) mod text_run_data;
 pub(crate) mod title_node;
 pub(crate) mod toc_container;
 
@@ -82,4 +86,15 @@ impl PropertySetId {
     pub(crate) fn from_jcid(id: JcId) -> Option<PropertySetId> {
         PropertySetId::from_u32(id.0)
     }
+}
+
+pub(crate) fn assert_property_set(object: &Object, expected: PropertySetId) -> Result<()> {
+    if object.id() == expected.as_jcid() {
+        return Ok(());
+    }
+
+    Err(ErrorKind::MalformedOneNoteFileData(
+        format!("unexpected object type: 0x{:X}", object.id().0).into(),
+    )
+    .into())
 }

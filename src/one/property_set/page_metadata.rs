@@ -1,7 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use crate::one::property::time::Timestamp;
-use crate::one::property::{simple, PropertyType};
-use crate::one::property_set::PropertySetId;
+use crate::one::property::{PropertyType, simple};
+use crate::one::property_set::{PropertySetId, assert_property_set};
 use crate::onestore::object::Object;
 use crate::shared::guid::Guid;
 
@@ -11,23 +11,19 @@ use crate::shared::guid::Guid;
 ///
 /// [\[MS-ONE\] 2.2.30]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/aaabcc70-5836-4dcb-8209-012ce5d45b3c
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) entity_guid: Guid,
     pub(crate) cached_title: String,
-    pub(crate) schema_revision_in_order_to_read: Option<u32>, // FIXME: Force this?
-    pub(crate) schema_revision_in_order_to_write: Option<u32>, // FIXME: Force this?
+    pub(crate) schema_revision_in_order_to_read: Option<u32>,
+    pub(crate) schema_revision_in_order_to_write: Option<u32>,
     pub(crate) page_level: i32,
     pub(crate) created_at: Timestamp,
     pub(crate) is_deleted: bool,
 }
 
 pub(crate) fn parse(object: &Object) -> Result<Data> {
-    if object.id() != PropertySetId::PageMetadata.as_jcid() {
-        return Err(ErrorKind::MalformedOneNoteFileData(
-            format!("unexpected object type: 0x{:X}", object.id().0).into(),
-        )
-        .into());
-    }
+    assert_property_set(object, PropertySetId::PageMetadata)?;
 
     let entity_guid = simple::parse_guid(PropertyType::NotebookManagementEntityGuid, object)?
         .ok_or_else(|| ErrorKind::MalformedOneNoteFileData("page metadata has no guid".into()))?;

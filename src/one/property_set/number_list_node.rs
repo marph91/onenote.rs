@@ -1,10 +1,10 @@
 use crate::errors::{ErrorKind, Result};
 use crate::one::property::color_ref::ColorRef;
 use crate::one::property::time::Time;
-use crate::one::property::{simple, PropertyType};
-use crate::one::property_set::PropertySetId;
+use crate::one::property::{PropertyType, simple};
+use crate::one::property_set::{PropertySetId, assert_property_set};
 use crate::onestore::object::Object;
-use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
+use std::char::{REPLACEMENT_CHARACTER, decode_utf16};
 
 /// A number list definition.
 ///
@@ -12,6 +12,7 @@ use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
 ///
 /// [\[MS-ONE\] 2.2.25]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/1a141e7a-4455-4971-bf0b-1621e221984e
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) last_modified: Time,
     pub(crate) list_font: Option<String>,
@@ -26,12 +27,7 @@ pub(crate) struct Data {
 }
 
 pub(crate) fn parse(object: &Object) -> Result<Data> {
-    if object.id() != PropertySetId::NumberListNode.as_jcid() {
-        return Err(ErrorKind::MalformedOneNoteFileData(
-            format!("unexpected object type: 0x{:X}", object.id().0).into(),
-        )
-        .into());
-    }
+    assert_property_set(object, PropertySetId::NumberListNode)?;
 
     let last_modified = Time::parse(PropertyType::LastModifiedTime, object)?.ok_or_else(|| {
         ErrorKind::MalformedOneNoteFileData("number list has no last modified time".into())

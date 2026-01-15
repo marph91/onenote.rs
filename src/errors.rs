@@ -1,7 +1,7 @@
 //! OneNote parsing error handling.
 
 use std::borrow::Cow;
-use std::{io, string};
+use std::io;
 use thiserror::Error;
 
 /// The result of parsing a OneNote file.
@@ -11,8 +11,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 ///
 /// If the crate is compiled with the `backtrace` feature enabled, the
 /// parsing error struct will contain a backtrace of the location where
-/// the error occured. The backtrace can be accessed using
-/// [`std::error::Error::backtrace()`].
+/// the error occurred. The backtrace can be accessed using
+/// `std::error::Error::backtrace`.
 #[derive(Error, Debug)]
 #[error("{kind}")]
 pub struct Error {
@@ -31,8 +31,8 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<std::string::FromUtf16Error> for Error {
-    fn from(err: std::string::FromUtf16Error) -> Self {
+impl From<widestring::error::Utf16Error> for Error {
+    fn from(err: widestring::error::Utf16Error) -> Self {
         ErrorKind::from(err).into()
     }
 }
@@ -111,7 +111,7 @@ pub enum ErrorKind {
     #[error("Malformed UTF-16 string: {err}")]
     Utf16Error {
         #[from]
-        err: string::FromUtf16Error,
+        err: widestring::error::Utf16Error,
     },
 
     /// A UTF-16 string without a null terminator was encountered during parsing.
@@ -120,4 +120,8 @@ pub enum ErrorKind {
         #[from]
         err: widestring::error::MissingNulTerminator,
     },
+
+    /// A filesystem path was missing required components.
+    #[error("Invalid path: {message}")]
+    InvalidPath { message: Cow<'static, str> },
 }

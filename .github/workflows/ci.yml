@@ -1,6 +1,11 @@
-on: push
+on:
+  push:
+  pull_request:
 
 name: Continuous integration
+
+permissions:
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,36 +16,39 @@ jobs:
     strategy:
       matrix:
         rust:
+          - 1.85.0
           - stable
           - beta
           - nightly
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
           components: rustfmt, clippy
 
-      - uses: actions-rs/cargo@v1
+      - uses: Swatinem/rust-cache@v2
         with:
-          command: build
+          shared-key: ci-${{ matrix.rust }}
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+      - name: cargo build
+        if: ${{ matrix.rust != 'nightly' }}
+        run: cargo build
 
-      - uses: actions-rs/cargo@v1
+      - name: cargo build (all features)
+        if: ${{ matrix.rust == 'nightly' }}
+        run: cargo build --all-features
+
+      - name: cargo test
+        run: cargo test
+
+      - name: cargo fmt
         if: ${{ matrix.rust == 'stable' }}
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
+      - name: cargo clippy
+        run: cargo clippy
 
-      - uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: EmbarkStudios/cargo-deny-action@v2

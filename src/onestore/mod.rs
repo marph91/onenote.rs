@@ -18,6 +18,7 @@ mod revision_role;
 pub(crate) mod types;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct OneStore<'a> {
     schema: Guid,
     header: StoreHeader,
@@ -30,7 +31,7 @@ impl<'a> OneStore<'a> {
         self.schema
     }
 
-    pub(crate) fn data_root(&'a self) -> &'a ObjectSpace {
+    pub(crate) fn data_root(&'a self) -> &'a ObjectSpace<'a> {
         &self.data_root
     }
 
@@ -39,13 +40,14 @@ impl<'a> OneStore<'a> {
     }
 }
 
-pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore> {
+pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore<'_>> {
     let mut parsed_object_spaces = HashSet::new();
 
     // [ONESTORE] 2.7.1: Parse storage manifest
     let storage_index = package
         .data_element_package
-        .find_storage_index()
+        .find_storage_index_by_id(package.storage_index)
+        .or_else(|| package.data_element_package.find_storage_index())
         .ok_or_else(|| ErrorKind::MalformedOneStoreData("storage index is missing".into()))?;
     let storage_manifest = package
         .data_element_package
@@ -63,7 +65,7 @@ pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore> {
     // [ONESTORE] 2.7.2: Parse header cell
     let header_cell = package
         .data_element_package
-        .find_objects(header_cell_mapping_id, &storage_index)?
+        .find_objects(header_cell_mapping_id, storage_index)?
         .into_iter()
         .next()
         .ok_or_else(|| {
@@ -74,7 +76,9 @@ pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore> {
 
     parsed_object_spaces.insert(header_cell_id);
 
-    // FIXME: document revision cache
+    // Revision cache deduplicates already parsed revisions by cell id.
+    // Object spaces can reference revisions across cells; caching avoids re-parsing and
+    // preserves identity when multiple spaces share the same revision.
     let mut revision_cache = HashMap::new();
 
     // Parse data root
@@ -83,7 +87,7 @@ pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore> {
     let (_, data_root) = parse_object_space(
         data_root_cell_id,
         storage_index,
-        &package,
+        package,
         &mut revision_cache,
     )?;
 
@@ -102,12 +106,8 @@ pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore> {
             continue;
         }
 
-        let (id, group) = parse_object_space(
-            mapping.cell_id,
-            storage_index,
-            &package,
-            &mut revision_cache,
-        )?;
+        let (id, group) =
+            parse_object_space(mapping.cell_id, storage_index, package, &mut revision_cache)?;
         object_spaces.insert(id, group);
     }
 
@@ -119,11 +119,11 @@ pub(crate) fn parse_store(package: &OneStorePackaging) -> Result<OneStore> {
     })
 }
 
-fn parse_object_space<'a, 'b>(
+fn parse_object_space<'a>(
     cell_id: CellId,
     storage_index: &'a StorageIndex,
     package: &'a OneStorePackaging,
-    revision_cache: &'b mut HashMap<CellId, Revision<'a>>,
+    revision_cache: &mut HashMap<CellId, Revision<'a>>,
 ) -> Result<(CellId, ObjectSpace<'a>)> {
     let mapping = storage_index
         .cell_mappings
@@ -136,7 +136,7 @@ fn parse_object_space<'a, 'b>(
 fn find_header_cell_id(manifest: &StorageManifest) -> Result<CellId> {
     manifest
         .roots
-        .get(&exguid!({{1A5A319C-C26B-41AA-B9C5-9BD8C44E07D4}, 1}))
+        .get(&exguid!({{"1A5A319C-C26B-41AA-B9C5-9BD8C44E07D4"}, 1}))
         .copied()
         .ok_or_else(|| ErrorKind::MalformedOneStoreData("no header cell root".into()).into())
 }
@@ -144,7 +144,7 @@ fn find_header_cell_id(manifest: &StorageManifest) -> Result<CellId> {
 fn find_data_root_cell_id(manifest: &StorageManifest) -> Result<CellId> {
     manifest
         .roots
-        .get(&exguid!({{84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073}, 2}))
+        .get(&exguid!({{"84DEFAB9-AAA3-4A0D-A3A8-520C77AC7073"}, 2}))
         .copied()
         .ok_or_else(|| ErrorKind::MalformedOneStoreData("no header cell root".into()).into())
 }

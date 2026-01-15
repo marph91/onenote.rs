@@ -1,7 +1,7 @@
+use crate::Reader;
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::compact_u64::CompactU64;
 use crate::fsshttpb::data::object_types::ObjectType;
-use crate::Reader;
 use num_traits::{FromPrimitive, ToPrimitive};
 
 /// A FSSHTTPB stream object header.
@@ -10,6 +10,7 @@ use num_traits::{FromPrimitive, ToPrimitive};
 ///
 /// [\[MS-FSSHTTPB\] 2.2.1.5]: https://docs.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-fsshttpb/5faee10f-8e55-43f8-935a-d6e4294856fc
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ObjectHeader {
     pub compound: bool,
     pub object_type: ObjectType,
@@ -197,8 +198,11 @@ impl ObjectHeader {
 
     pub(crate) fn has_end_8(reader: Reader, object_type: ObjectType) -> Result<bool> {
         let data = reader.bytes().first().ok_or(ErrorKind::UnexpectedEof)?;
+        let expected = object_type.to_u8().ok_or_else(|| {
+            ErrorKind::MalformedFssHttpBData(format!("invalid object type: {object_type:?}").into())
+        })?;
 
-        Ok(data & 0b11 == 0x1 && data >> 2 == object_type.to_u8().unwrap())
+        Ok(data & 0b11 == 0x1 && data >> 2 == expected)
     }
 
     fn try_parse_start(

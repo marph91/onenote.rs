@@ -178,7 +178,7 @@ pub(crate) fn parse_ink(ink_container_id: ExGuid, space: &ObjectSpace) -> Result
                 bounding_box: None,
                 offset_horizontal: container.offset_from_parent_horiz,
                 offset_vertical: container.offset_from_parent_vert,
-            })
+            });
         }
     };
 
@@ -268,14 +268,14 @@ fn parse_ink_path(
     let idx_x = props
         .dimensions
         .iter()
-        .position(|d| d.id == guid!({598a6a8f-52c0-4ba0-93af-af357411a561}))
+        .position(|d| d.id == guid!("598a6a8f-52c0-4ba0-93af-af357411a561"))
         .ok_or_else(|| {
             ErrorKind::MalformedOneNoteData("ink stroke properties has no x dimension".into())
         })?;
     let idx_y = props
         .dimensions
         .iter()
-        .position(|d| d.id == guid!({ b53f9f75 - 04e0 - 4498 - a7ee - c30dbb5a9011 }))
+        .position(|d| d.id == guid!("b53f9f75-04e0-4498-a7ee-c30dbb5a9011"))
         .ok_or_else(|| {
             ErrorKind::MalformedOneNoteData("ink stroke properties has no y dimension".into())
         })?;

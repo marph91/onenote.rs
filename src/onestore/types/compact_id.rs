@@ -1,5 +1,5 @@
-use crate::errors::Result;
 use crate::Reader;
+use crate::errors::Result;
 
 /// A compact reference to an ID in the mapping table.
 ///
@@ -20,5 +20,20 @@ impl CompactId {
         let guid_index = data >> 8;
 
         Ok(CompactId { n, guid_index })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CompactId;
+    use crate::reader::Reader;
+
+    #[test]
+    fn test_parse_compact_id() {
+        let data = [0xDD, 0xCC, 0xBB, 0xAA];
+        let compact = CompactId::parse(&mut Reader::new(&data)).unwrap();
+
+        assert_eq!(compact.n, 0xDD);
+        assert_eq!(compact.guid_index, 0xAABB_CC);
     }
 }

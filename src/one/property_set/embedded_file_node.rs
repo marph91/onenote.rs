@@ -4,9 +4,9 @@ use crate::one::property::file_type::FileType;
 use crate::one::property::layout_alignment::LayoutAlignment;
 use crate::one::property::object_reference::ObjectReference;
 use crate::one::property::time::Time;
-use crate::one::property::{simple, PropertyType};
+use crate::one::property::{PropertyType, simple};
 use crate::one::property_set::note_tag_container::Data as NoteTagData;
-use crate::one::property_set::PropertySetId;
+use crate::one::property_set::{PropertySetId, assert_property_set};
 use crate::onestore::object::Object;
 use log::info;
 
@@ -16,6 +16,7 @@ use log::info;
 ///
 /// [\[MS-ONE\] 2.2.32]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/a665b5ad-ff40-4c0c-9e42-4b707254dc3f
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) last_modified: Time,
     pub(crate) picture_container: Option<ExGuid>,
@@ -39,12 +40,7 @@ pub(crate) struct Data {
 }
 
 pub(crate) fn parse(object: &Object) -> Result<Data> {
-    if object.id() != PropertySetId::EmbeddedFileNode.as_jcid() {
-        return Err(ErrorKind::MalformedOneNoteFileData(
-            format!("unexpected object type: 0x{:X}", object.id().0).into(),
-        )
-        .into());
-    }
+    assert_property_set(object, PropertySetId::EmbeddedFileNode)?;
 
     let last_modified = Time::parse(PropertyType::LastModifiedTime, object)?.ok_or_else(|| {
         ErrorKind::MalformedOneNoteFileData("embedded file has no last modified time".into())
@@ -100,7 +96,7 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
         note_tags,
         offset_from_parent_horiz,
         offset_from_parent_vert,
-        recording_duration: None, // FIXME: Parse this
+        recording_duration: None,
     };
 
     Ok(data)

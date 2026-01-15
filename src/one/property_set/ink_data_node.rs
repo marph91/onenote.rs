@@ -1,23 +1,19 @@
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::exguid::ExGuid;
 use crate::one::property::object_reference::ObjectReference;
-use crate::one::property::{simple, PropertyType};
-use crate::one::property_set::PropertySetId;
+use crate::one::property::{PropertyType, simple};
+use crate::one::property_set::{PropertySetId, assert_property_set};
 use crate::onestore::object::Object;
 
 /// An ink data container.
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) strokes: Vec<ExGuid>,
     pub(crate) bounding_box: Option<[u32; 4]>,
 }
 
 pub(crate) fn parse(object: &Object) -> Result<Data> {
-    if object.id() != PropertySetId::InkDataNode.as_jcid() {
-        return Err(ErrorKind::MalformedOneNoteFileData(
-            format!("unexpected object type: 0x{:X}", object.id().0).into(),
-        )
-        .into());
-    }
+    assert_property_set(object, PropertySetId::InkDataNode)?;
 
     let strokes =
         ObjectReference::parse_vec(PropertyType::InkStrokes, object)?.ok_or_else(|| {

@@ -2,8 +2,8 @@ use crate::errors::Result;
 use crate::one::property::charset::Charset;
 use crate::one::property::color_ref::ColorRef;
 use crate::one::property::paragraph_alignment::ParagraphAlignment;
-use crate::one::property::{simple, PropertyType};
-use crate::one::property_set::PropertySetId;
+use crate::one::property::{PropertyType, simple};
+use crate::one::property_set::{PropertySetId, assert_property_set};
 use crate::onestore::object::Object;
 use log::warn;
 
@@ -14,6 +14,7 @@ use log::warn;
 /// [\[MS-ONE\] 2.2.43]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/38eb9b74-cfaf-4df7-b061-a83968c7ff5b
 /// [\[MS-ONE\] 2.2.44]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/f0baabae-f42a-42e0-8cb2-869d420e865f
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) charset: Option<Charset>,
     pub(crate) bold: bool,
@@ -42,6 +43,7 @@ pub(crate) struct Data {
 }
 
 pub(crate) fn parse(object: &Object) -> Result<Data> {
+
     if object.id() != PropertySetId::ParagraphStyleObject.as_jcid() {
         warn!(
             "unexpected object type: 0x{:X}. Using fallback style.",
@@ -74,6 +76,8 @@ pub(crate) fn parse(object: &Object) -> Result<Data> {
             text_run_object_type: None,
         });
     }
+
+    assert_property_set(object, PropertySetId::ParagraphStyleObject)?;
 
     let charset = Charset::parse(PropertyType::Charset, object)?;
     let bold = simple::parse_bool(PropertyType::Bold, object)?.unwrap_or_default();

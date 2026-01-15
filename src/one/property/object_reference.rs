@@ -1,7 +1,7 @@
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::exguid::ExGuid;
-use crate::one::property::references::References;
 use crate::one::property::PropertyType;
+use crate::one::property::references::References;
 use crate::onestore::object::Object;
 use crate::onestore::types::compact_id::CompactId;
 use crate::onestore::types::property::PropertyValue;
@@ -25,12 +25,10 @@ impl ObjectReference {
         // Find the correct object reference
         let index = Self::get_offset(prop_type, object)?;
 
-        let id = object
-            .props()
-            .object_ids()
-            .iter()
-            .nth(index)
-            .ok_or_else(|| ErrorKind::MalformedOneNoteFileData("object id index corrupt".into()))?;
+        let id =
+            object.props().object_ids().get(index).ok_or_else(|| {
+                ErrorKind::MalformedOneNoteFileData("object id index corrupt".into())
+            })?;
 
         Ok(Self::resolve_id(index, id, object))
     }

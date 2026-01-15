@@ -3,9 +3,9 @@ use crate::fsshttpb::data::exguid::ExGuid;
 use crate::one::property::layout_alignment::LayoutAlignment;
 use crate::one::property::object_reference::ObjectReference;
 use crate::one::property::time::Time;
-use crate::one::property::{simple, PropertyType};
+use crate::one::property::{PropertyType, simple};
 use crate::one::property_set::note_tag_container::Data as NoteTagData;
-use crate::one::property_set::PropertySetId;
+use crate::one::property_set::{PropertySetId, assert_property_set};
 use crate::onestore::object::Object;
 
 /// A table.
@@ -14,6 +14,7 @@ use crate::onestore::object::Object;
 ///
 /// [\[MS-ONE\] 2.2.26]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/9046980a-2410-4b2d-8a35-ec06e55648e0
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) last_modified: Time,
     pub(crate) rows: Vec<ExGuid>,
@@ -28,12 +29,7 @@ pub(crate) struct Data {
 }
 
 pub(crate) fn parse(object: &Object) -> Result<Data> {
-    if object.id() != PropertySetId::TableNode.as_jcid() {
-        return Err(ErrorKind::MalformedOneNoteFileData(
-            format!("unexpected object type: 0x{:X}", object.id().0).into(),
-        )
-        .into());
-    }
+    assert_property_set(object, PropertySetId::TableNode)?;
 
     let last_modified = Time::parse(PropertyType::LastModifiedTime, object)?.ok_or_else(|| {
         ErrorKind::MalformedOneNoteFileData("table has no last modified time".into())

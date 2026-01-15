@@ -1,3 +1,4 @@
+use crate::Reader;
 use crate::errors::{ErrorKind, Result};
 use crate::fsshttpb::data::cell_id::CellId;
 use crate::fsshttpb::data::exguid::ExGuid;
@@ -5,7 +6,6 @@ use crate::fsshttpb::data::object_types::ObjectType;
 use crate::fsshttpb::data::serial_number::SerialNumber;
 use crate::fsshttpb::data::stream_object::ObjectHeader;
 use crate::fsshttpb::data_element::DataElement;
-use crate::Reader;
 use std::collections::HashMap;
 
 /// A storage index.
@@ -14,6 +14,7 @@ use std::collections::HashMap;
 ///
 /// [\[MS-FSSHTTPB\] 2.2.1.12.2]: https://docs.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-fsshttpb/f5724986-bd0f-488d-9b85-7d5f954d8e9a
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct StorageIndex {
     pub(crate) manifest_mappings: Vec<StorageIndexManifestMapping>,
     pub(crate) cell_mappings: HashMap<CellId, StorageIndexCellMapping>,
@@ -30,10 +31,20 @@ impl StorageIndex {
             .get(&id)
             .map(|mapping| mapping.revision_mapping)
     }
+
+    pub(crate) fn find_revision_mapping_by_serial(&self, serial: &SerialNumber) -> Option<ExGuid> {
+        self.revision_mappings
+            .values()
+            .find(|mapping| {
+                mapping.serial.guid == serial.guid && mapping.serial.serial == serial.serial
+            })
+            .map(|mapping| mapping.revision_mapping)
+    }
 }
 
 /// A storage indexes manifest mapping.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct StorageIndexManifestMapping {
     pub(crate) mapping_id: ExGuid,
     pub(crate) serial: SerialNumber,
@@ -41,6 +52,7 @@ pub(crate) struct StorageIndexManifestMapping {
 
 /// A storage indexes cell mapping.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct StorageIndexCellMapping {
     pub(crate) cell_id: CellId,
     pub(crate) id: ExGuid,
@@ -49,6 +61,7 @@ pub(crate) struct StorageIndexCellMapping {
 
 /// A storage indexes revision mapping.
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct StorageIndexRevisionMapping {
     pub(crate) revision_mapping: ExGuid,
     pub(crate) serial: SerialNumber,
@@ -84,7 +97,7 @@ impl DataElement {
                     return Err(ErrorKind::MalformedFssHttpBData(
                         format!("unexpected object type: {:x}", object_header.object_type).into(),
                     )
-                    .into())
+                    .into());
                 }
             }
         }

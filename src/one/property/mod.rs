@@ -23,6 +23,7 @@ mod references;
 pub(crate) mod simple;
 pub(crate) mod time;
 
+#[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[allow(dead_code)]
 #[allow(clippy::enum_clike_unportable_variant)]
@@ -206,4 +207,11 @@ pub(crate) enum PropertyType {
     EmbeddedInkSpaceHeight = 0x14001C28,
     ImageEmbedType = 0x140035F2,
     ImageEmbeddedUrl = 0x1C0035F3,
+    MathInlineObjectType = 0x1400344F,
+    MathInlineObjectCount = 0x14003450,
+    MathInlineObjectCol = 0x0C003451,
+    MathInlineObjectAlign = 0x0C003452,
+    MathInlineObjectChar = 0x10003453,
+    MathInlineObjectChar1 = 0x10003454,
+    MathInlineObjectChar2 = 0x10003455,
 }

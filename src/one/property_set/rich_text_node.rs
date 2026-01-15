@@ -4,9 +4,9 @@ use crate::one::property::layout_alignment::LayoutAlignment;
 use crate::one::property::object_reference::ObjectReference;
 use crate::one::property::paragraph_alignment::ParagraphAlignment;
 use crate::one::property::time::Time;
-use crate::one::property::{simple, PropertyType};
+use crate::one::property::{PropertyType, simple};
 use crate::one::property_set::note_tag_container::Data as NoteTagData;
-use crate::one::property_set::PropertySetId;
+use crate::one::property_set::{PropertySetId, assert_property_set};
 use crate::onestore::object::Object;
 use log::warn;
 
@@ -16,6 +16,7 @@ use log::warn;
 ///
 /// [\[MS-ONE\] 2.2.23]: https://docs.microsoft.com/en-us/openspecs/office_file_formats/ms-one/980fae36-b5dd-4581-bf1e-5ab54177153d
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) struct Data {
     pub(crate) last_modified_time: Time,
     pub(crate) tight_layout: bool,
@@ -40,12 +41,7 @@ pub(crate) struct Data {
 }
 
 pub(crate) fn parse(object: &Object) -> Result<Data> {
-    if object.id() != PropertySetId::RichTextNode.as_jcid() {
-        return Err(ErrorKind::MalformedOneNoteFileData(
-            format!("unexpected object type: 0x{:X}", object.id().0).into(),
-        )
-        .into());
-    }
+    assert_property_set(object, PropertySetId::RichTextNode)?;
 
     let last_modified_time =
         Time::parse(PropertyType::LastModifiedTime, object)?.ok_or_else(|| {
